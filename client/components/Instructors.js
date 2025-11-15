@@ -15,7 +15,7 @@ export default function Instructors() {
       role: 'Lead Instructor',
       focus: 'Teaching & Mentorship',
       description: 'Passionate about teaching web development and helping students build real-world projects. Specializes in MERN stack and modern JavaScript frameworks.',
-      skills: ['React', 'Node.js', 'MongoDB', 'Next.js', 'Teaching'],
+      skills: ['React', 'Node.js', 'MongoDB', 'Next.js', 'Teaching','Leadership'],
       linkedin: 'https://www.linkedin.com/in/aditya-gupta9608/',
       github: 'https://github.com/dev-aditya-lab',
       image: 'https://avatars.githubusercontent.com/u/111672157?v=4', // You can add actual image later

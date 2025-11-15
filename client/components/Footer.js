@@ -74,7 +74,7 @@ export default function Footer() {
         <div className="pt-8 border-t border-code-border/30 text-center">
           <p className="text-gray-500 font-mono text-sm flex items-center justify-center gap-2">
             <span className="text-code-yellow">{'// '}</span>
-            Made with <HiHeart className="text-red-500" /> by <a  href="https://www.linkedin.com/in/aditya-gupta9608/" className="text-blue-500">Aditya Gupta</a> & <span className="text-blue-500">Sumit jha</span> the of Team Aarambh
+            Made with <HiHeart className="text-red-500" /> by <a  href="https://www.linkedin.com/in/aditya-gupta9608/" className="text-blue-500">Aditya Gupta</a> & <span className="text-blue-500">Sumit jha</span> the member of Team Aarambh
           </p>
           <p className="text-gray-600 text-xs mt-2">
             © 2025 Aarambh. All rights reserved.
