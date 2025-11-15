@@ -118,7 +118,10 @@ export default function RegistrationModal({ isOpen, onClose, config }) {
 
                 // Skip if this field was already rendered as part of a 2-column grid
                 const prevField = formFields[index - 1]
-                if (index > 0 && !isFullWidth && prevField && !['textarea', 'select', 'radio'].includes(prevField.type)) {
+                const isPrevFullWidth = prevField && ['textarea', 'select', 'radio'].includes(prevField.type)
+                
+                // Check if previous field is NOT full width AND previous field can pair with current
+                if (index > 0 && !isFullWidth && !isPrevFullWidth) {
                   return null
                 }
 
