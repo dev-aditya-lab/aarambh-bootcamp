@@ -1,3 +1,5 @@
+import './globals.css'
+
 export const metadata = {
   title: 'Aarambh - Web Development Bootcamp 2025',
   description: 'Join Aarambh\'s intensive web development bootcamp on November 22, 2025. Learn, build, and launch your projects with us.',

@@ -6,6 +6,7 @@ import axios from 'axios'
 import { API_URL } from '@/lib/config'
 import { useRouter } from 'next/navigation'
 import { FaLock, FaUser, FaShieldAlt, FaCode } from 'react-icons/fa'
+import '@/app/globals.css'
 
 export default function AdminLogin() {
   const router = useRouter()
