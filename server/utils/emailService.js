@@ -73,11 +73,12 @@ const sendRegistrationEmail = async (registration) => {
 
               <h3>What You'll Learn:</h3>
               <ul>
-                <li>✅ Modern Web Development</li>
-                <li>✅ React & Next.js</li>
-                <li>✅ Backend with Node.js</li>
-                <li>✅ Database with MongoDB</li>
-                <li>✅ Real-world Project Building</li>
+                <li>✅ Roadmap Understanding</li>
+                <li>✅ Build real interactive features</li>
+                <li>✅ Move into real-world tools</li>
+                <li>✅ Creating Interactive UI</li>
+                <li>✅ Real-world Project Idea</li>
+                <li>✅ Practice Strategy</li>
               </ul>
 
               <p>We're excited to have you join us! If you have any questions, feel free to reply to this email.</p>

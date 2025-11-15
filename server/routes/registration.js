@@ -3,7 +3,7 @@ const router = express.Router();
 const Registration = require('../models/Registration');
 const SiteConfig = require('../models/SiteConfig');
 const { verifyAdmin } = require('./admin');
-const { sendRegistrationEmail, sendAdminNotification } = require('../utils/emailService');
+const { sendRegistrationEmail } = require('../utils/emailService');
 
 // POST - Create new registration
 router.post('/', async (req, res) => {
@@ -38,15 +38,12 @@ router.post('/', async (req, res) => {
     const registration = new Registration(registrationData);
     await registration.save();
 
-    // Send confirmation email to participant (async, don't wait)
+    // Send confirmation email to participant only (async, don't wait)
     sendRegistrationEmail(registration.toObject()).catch(err => {
       console.error('Failed to send confirmation email:', err);
     });
 
-    // Send notification to admin (async, don't wait)
-    sendAdminNotification(registration.toObject()).catch(err => {
-      console.error('Failed to send admin notification:', err);
-    });
+    // Note: Admin notification removed - only sending to participant
 
     res.status(201).json({
       success: true,
