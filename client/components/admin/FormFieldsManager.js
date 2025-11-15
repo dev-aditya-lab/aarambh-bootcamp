@@ -7,6 +7,7 @@ import { FaPlus, FaTrash, FaArrowUp, FaArrowDown, FaEdit, FaSave, FaTimes, FaEye
 export default function FormFieldsManager() {
   const [formFields, setFormFields] = useState([])
   const [editingIndex, setEditingIndex] = useState(null)
+  const [hasChanges, setHasChanges] = useState(false)
   const [newField, setNewField] = useState({
     label: '',
     name: '',
@@ -25,23 +26,29 @@ export default function FormFieldsManager() {
   const fetchFormFields = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/config`)
-      setFormFields(response.data.formFields || [])
+      const fields = response.data.formFields || []
+      // Ensure all fields have isVisible property set to true if undefined
+      const fieldsWithVisibility = fields.map(field => ({
+        ...field,
+        isVisible: field.isVisible !== false
+      }))
+      setFormFields(fieldsWithVisibility)
     } catch (error) {
       console.error('Error fetching form fields:', error)
     }
   }
 
-  const saveFormFields = async (fields) => {
+  const saveFormFields = async () => {
     try {
       await axios.put(
         `${API_URL}/api/config/form-fields`,
-        { formFields: fields },
+        { formFields },
         { headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } }
       )
-      alert('Form fields updated successfully!')
-      setFormFields(fields)
+      alert('Form fields saved successfully!')
+      setHasChanges(false)
     } catch (error) {
-      alert('Failed to update form fields')
+      alert('Failed to save form fields')
       console.error('Error:', error)
     }
   }
@@ -52,7 +59,7 @@ export default function FormFieldsManager() {
       return
     }
 
-    const fieldToAdd = { ...newField }
+    const fieldToAdd = { ...newField, isVisible: true }
     
     // Convert options string to array if needed
     if (['select', 'radio', 'checkbox'].includes(newField.type) && newField.options) {
@@ -61,8 +68,8 @@ export default function FormFieldsManager() {
       delete fieldToAdd.options
     }
 
-    const updatedFields = [...formFields, fieldToAdd]
-    saveFormFields(updatedFields)
+    setFormFields([...formFields, fieldToAdd])
+    setHasChanges(true)
     
     // Reset new field form
     setNewField({
@@ -80,7 +87,8 @@ export default function FormFieldsManager() {
   const handleDeleteField = (index) => {
     if (confirm('Are you sure you want to delete this field?')) {
       const updatedFields = formFields.filter((_, i) => i !== index)
-      saveFormFields(updatedFields)
+      setFormFields(updatedFields)
+      setHasChanges(true)
     }
   }
 
@@ -90,7 +98,8 @@ export default function FormFieldsManager() {
     const temp = updatedFields[index]
     updatedFields[index] = updatedFields[index - 1]
     updatedFields[index - 1] = temp
-    saveFormFields(updatedFields)
+    setFormFields(updatedFields)
+    setHasChanges(true)
   }
 
   const handleMoveDown = (index) => {
@@ -99,32 +108,37 @@ export default function FormFieldsManager() {
     const temp = updatedFields[index]
     updatedFields[index] = updatedFields[index + 1]
     updatedFields[index + 1] = temp
-    saveFormFields(updatedFields)
+    setFormFields(updatedFields)
+    setHasChanges(true)
   }
 
   const handleToggleVisibility = (index) => {
     const updatedFields = [...formFields]
     updatedFields[index].isVisible = !updatedFields[index].isVisible
-    saveFormFields(updatedFields)
+    setFormFields(updatedFields)
+    setHasChanges(true)
   }
 
   const startEditing = (index) => {
     setEditingIndex(index)
   }
 
-  const saveEdit = (index, updatedField) => {
+  const saveEdit = (index) => {
+    const field = formFields[index]
+    
     // Convert options string to array if needed
-    if (['select', 'radio', 'checkbox'].includes(updatedField.type) && typeof updatedField.options === 'string') {
-      updatedField.options = updatedField.options.split('\n').map(opt => opt.trim()).filter(opt => opt)
+    if (['select', 'radio', 'checkbox'].includes(field.type) && typeof field.options === 'string') {
+      const updatedFields = [...formFields]
+      updatedFields[index].options = field.options.split('\n').map(opt => opt.trim()).filter(opt => opt)
+      setFormFields(updatedFields)
     }
 
-    const updatedFields = [...formFields]
-    updatedFields[index] = updatedField
-    saveFormFields(updatedFields)
     setEditingIndex(null)
+    setHasChanges(true)
   }
 
   const cancelEdit = () => {
+    fetchFormFields()
     setEditingIndex(null)
   }
 
@@ -136,6 +150,24 @@ export default function FormFieldsManager() {
 
   return (
     <div className="space-y-8">
+      {/* Save Button - Sticky at top when changes exist */}
+      {hasChanges && (
+        <div className="sticky top-0 z-10 bg-green-600 border border-green-500 rounded-lg p-4 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white font-semibold">You have unsaved changes</p>
+              <p className="text-green-100 text-sm">Click save to apply your changes</p>
+            </div>
+            <button
+              onClick={saveFormFields}
+              className="bg-white text-green-600 hover:bg-green-50 px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 shadow-md"
+            >
+              <FaSave /> Save All Changes
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Add New Field */}
       <div className="bg-[#0d1117] border border-gray-800 rounded-lg p-6">
         <h3 className="text-xl font-bold text-[#1f6feb] mb-4 flex items-center gap-2">
@@ -231,14 +263,14 @@ export default function FormFieldsManager() {
               Required Field
             </label>
 
-            <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-green-400 cursor-pointer">
               <input
                 type="checkbox"
                 checked={newField.isVisible}
                 onChange={(e) => setNewField({ ...newField, isVisible: e.target.checked })}
-                className="w-4 h-4 text-[#1f6feb] border-gray-600 rounded focus:ring-[#1f6feb]"
+                className="w-4 h-4 text-green-600 border-gray-600 rounded focus:ring-green-600"
               />
-              Visible
+              Visible (Show in form)
             </label>
           </div>
         </div>
@@ -262,7 +294,7 @@ export default function FormFieldsManager() {
             <div
               key={index}
               className={`bg-[#0d1117] border rounded-lg p-4 ${
-                field.isVisible ? 'border-gray-800' : 'border-red-900 opacity-60'
+                field.isVisible !== false ? 'border-green-800' : 'border-red-900 opacity-60'
               }`}
             >
               {editingIndex === index ? (
@@ -351,7 +383,7 @@ export default function FormFieldsManager() {
                         Required
                       </label>
 
-                      <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+                      <label className="flex items-center gap-2 text-sm text-green-400 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={field.isVisible !== false}
@@ -365,7 +397,7 @@ export default function FormFieldsManager() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => saveEdit(index, field)}
+                      onClick={() => saveEdit(index)}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg flex items-center justify-center gap-2"
                     >
                       <FaSave /> Save
@@ -385,7 +417,11 @@ export default function FormFieldsManager() {
                       <h4 className="text-lg font-semibold text-white flex items-center gap-2">
                         {field.label}
                         {field.required && <span className="text-red-500 text-sm">*</span>}
-                        {!field.isVisible && <span className="text-red-500 text-xs">(Hidden)</span>}
+                        {field.isVisible !== false ? (
+                          <span className="text-green-500 text-xs bg-green-900 px-2 py-1 rounded">✓ Visible</span>
+                        ) : (
+                          <span className="text-red-500 text-xs bg-red-900 px-2 py-1 rounded">✗ Hidden</span>
+                        )}
                       </h4>
                       <p className="text-sm text-gray-500">
                         <span className="text-blue-400">{field.type}</span> • {field.name}
@@ -419,10 +455,10 @@ export default function FormFieldsManager() {
                       </button>
                       <button
                         onClick={() => handleToggleVisibility(index)}
-                        className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded"
-                        title={field.isVisible ? 'Hide' : 'Show'}
+                        className={`p-2 rounded ${field.isVisible !== false ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white`}
+                        title={field.isVisible !== false ? 'Hide Field' : 'Show Field'}
                       >
-                        {field.isVisible ? <FaEye /> : <FaEyeSlash />}
+                        {field.isVisible !== false ? <FaEye /> : <FaEyeSlash />}
                       </button>
                       <button
                         onClick={() => startEditing(index)}
@@ -446,6 +482,16 @@ export default function FormFieldsManager() {
           ))
         )}
       </div>
+
+      {/* Bottom Save Button */}
+      {hasChanges && (
+        <button
+          onClick={saveFormFields}
+          className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 shadow-lg"
+        >
+          <FaSave /> Save All Changes
+        </button>
+      )}
     </div>
   )
 }
