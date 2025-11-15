@@ -51,7 +51,7 @@ mongoose.connection.on('disconnected', () => {
 });
 
 // Routes
-app.use('/api/register', registrationRoutes);
+app.use('/api/registration', registrationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/config', configRoutes);
 
@@ -60,9 +60,9 @@ app.get('/', (req, res) => {
   res.json({
     message: '🚀 Aarambh API is running!',
     endpoints: {
-      register: 'POST /api/register',
-      getRegistrations: 'GET /api/register',
-      deleteRegistration: 'DELETE /api/register/:id',
+      register: 'POST /api/registration',
+      getRegistrations: 'GET /api/registration',
+      deleteRegistration: 'DELETE /api/registration/:id',
       adminLogin: 'POST /api/admin/login',
       adminCreate: 'POST /api/admin/create',
       getConfig: 'GET /api/config',
