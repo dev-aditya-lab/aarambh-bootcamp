@@ -14,6 +14,25 @@ router.post('/', async (req, res) => {
     const config = await SiteConfig.findOne();
     const formFields = config?.formFields || [];
 
+    // Check if registrations are open
+    if (config?.siteInfo?.registrationOpen === false) {
+      return res.status(400).json({
+        success: false,
+        message: 'Registrations are currently closed! ⛔'
+      });
+    }
+
+    // Check max participants limit
+    const currentCount = await Registration.countDocuments();
+    const maxParticipants = config?.siteInfo?.maxParticipants || 100;
+    
+    if (currentCount >= maxParticipants) {
+      return res.status(400).json({
+        success: false,
+        message: 'Registration is full! All seats are taken. 😔'
+      });
+    }
+
     // Validate based on form configuration
     const validationErrors = await Registration.validateRegistration(registrationData, formFields);
     if (validationErrors.length > 0) {
@@ -78,13 +97,37 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET - Get all registrations (with pagination and filters)
+// GET - Check registration status (open/closed, remaining seats)
+router.get('/status', async (req, res) => {
+  try {
+    const config = await SiteConfig.findOne();
+    const currentCount = await Registration.countDocuments();
+    const maxParticipants = config?.siteInfo?.maxParticipants || 100;
+    const isOpen = config?.siteInfo?.registrationOpen !== false;
+    const remainingSeats = Math.max(0, maxParticipants - currentCount);
+
+    res.json({
+      success: true,
+      data: {
+        registrationOpen: isOpen,
+        maxParticipants,
+        currentParticipants: currentCount,
+        remainingSeats,
+        isFull: currentCount >= maxParticipants
+      }
+    });
+  } catch (error) {
+    console.error('Status check error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to check registration status' 
+    });
+  }
+});
+
+// GET - Get all registrations (no pagination limit for admin)
 router.get('/', async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
     // Build filter
     const filter = {};
     if (req.query.experience) {
@@ -97,23 +140,19 @@ router.get('/', async (req, res) => {
       filter.status = req.query.status;
     }
 
-    // Get registrations
+    // Get all registrations (no limit)
     const registrations = await Registration.find(filter)
-      .sort({ registeredAt: -1 })
-      .skip(skip)
-      .limit(limit)
+      .sort({ createdAt: -1 })
       .select('-__v');
 
-    const total = await Registration.countDocuments(filter);
+    const total = registrations.length;
 
     res.json({
       success: true,
       data: registrations,
       pagination: {
-        page,
-        limit,
         total,
-        pages: Math.ceil(total / limit)
+        count: total
       }
     });
 
@@ -149,6 +188,30 @@ router.get('/:id', async (req, res) => {
       success: false,
       message: 'Failed to fetch registration'
     });
+  }
+});
+
+// GET - Check registration status (open/closed, remaining seats)
+router.get('/status', async (req, res) => {
+  try {
+    const config = await SiteConfig.findOne();
+    const currentCount = await Registration.countDocuments();
+    const maxParticipants = config?.siteInfo?.maxParticipants || 100;
+    const isOpen = config?.siteInfo?.registrationOpen !== false;
+    const remainingSeats = Math.max(0, maxParticipants - currentCount);
+
+    res.json({
+      success: true,
+      data: {
+        registrationOpen: isOpen,
+        maxParticipants,
+        currentParticipants: currentCount,
+        remainingSeats,
+        isFull: currentCount >= maxParticipants
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

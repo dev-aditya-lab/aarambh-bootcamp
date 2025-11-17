@@ -65,8 +65,7 @@ const SiteConfigSchema = new mongoose.Schema({
     heroSubtitle: String,
     aboutDescription: String,
     registrationOpen: { type: Boolean, default: true },
-    maxParticipants: Number,
-    currentParticipants: { type: Number, default: 0 }
+    maxParticipants: { type: Number, default: 100 }
   },
 
   // Bonus Benefits

@@ -8,12 +8,23 @@ export default function RegistrationModal({ isOpen, onClose }) {
   const [formFields, setFormFields] = useState([])
   const [formData, setFormData] = useState({})
   const [loading, setLoading] = useState(false)
+  const [regStatus, setRegStatus] = useState(null)
 
   useEffect(() => {
     if (isOpen) {
       fetchFormFields()
+      checkRegistrationStatus()
     }
   }, [isOpen])
+
+  const checkRegistrationStatus = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/registration/status`)
+      setRegStatus(response.data.data)
+    } catch (error) {
+      console.error('Failed to check registration status:', error)
+    }
+  }
 
   const fetchFormFields = async () => {
     try {
@@ -211,6 +222,28 @@ export default function RegistrationModal({ isOpen, onClose }) {
             <p className="text-gray-500 text-sm font-mono">// Fill in your details to join the bootcamp</p>
           </div>
 
+          {/* Registration Status Warning */}
+          {regStatus && !regStatus.registrationOpen && (
+            <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 mb-6">
+              <p className="text-red-500 font-semibold">⛔ Registration Closed</p>
+              <p className="text-red-400 text-sm">Registrations are currently not open.</p>
+            </div>
+          )}
+
+          {regStatus && regStatus.isFull && (
+            <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-4 mb-6">
+              <p className="text-yellow-500 font-semibold">🎫 Registration Full</p>
+              <p className="text-yellow-400 text-sm">All {regStatus.maxParticipants} seats have been taken.</p>
+            </div>
+          )}
+
+          {regStatus && regStatus.registrationOpen && !regStatus.isFull && regStatus.remainingSeats <= 10 && (
+            <div className="bg-orange-900/20 border border-orange-500 rounded-lg p-4 mb-6">
+              <p className="text-orange-500 font-semibold">⚠️ Limited Seats</p>
+              <p className="text-orange-400 text-sm">Only {regStatus.remainingSeats} seats remaining!</p>
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
@@ -240,7 +273,7 @@ export default function RegistrationModal({ isOpen, onClose }) {
             <div className="flex gap-4 pt-6 border-t border-gray-800">
               <motion.button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (regStatus && (!regStatus.registrationOpen || regStatus.isFull))}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="flex-1 bg-[#1f6feb] hover:bg-[#1a5cd6] text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 shadow-lg shadow-[#1f6feb]/30 disabled:opacity-50 disabled:cursor-not-allowed"

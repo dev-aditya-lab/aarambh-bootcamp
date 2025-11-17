@@ -3,10 +3,13 @@
 import { motion } from 'framer-motion'
 import { BsCalendar3 } from 'react-icons/bs'
 import { useState, useEffect } from 'react'
+import axios from 'axios'
+import { API_URL } from '@/lib/config'
 
 export default function Hero({ openModal, config }) {
   const [text, setText] = useState('')
   const [showCursor, setShowCursor] = useState(true)
+  const [regStatus, setRegStatus] = useState(null)
   const fullText = '> initializing_aarambh.exe...'
 
   const heroTitle = config?.siteInfo?.heroTitle || 'Welcome to Aarambh'
@@ -39,6 +42,19 @@ export default function Hero({ openModal, config }) {
       clearInterval(cursorBlink)
     }
   }, [])
+
+  useEffect(() => {
+    fetchRegistrationStatus()
+  }, [])
+
+  const fetchRegistrationStatus = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/registration/status`)
+      setRegStatus(response.data.data)
+    } catch (error) {
+      console.error('Failed to fetch registration status:', error)
+    }
+  }
 
   return (
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden px-4">
@@ -119,7 +135,36 @@ export default function Hero({ openModal, config }) {
           </p>
         </motion.div>
 
-        {/* CTA Button with special effects */}
+        {/* Registration Status */}
+        {regStatus && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="mb-6"
+          >
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-code-darker/60 border border-code-green/40 rounded-full backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  !regStatus.registrationOpen ? 'bg-red-500 animate-pulse' :
+                  regStatus.isFull ? 'bg-yellow-500 animate-pulse' :
+                  regStatus.remainingSeats <= 10 ? 'bg-orange-500 animate-pulse' :
+                  'bg-green-500 animate-pulse'
+                }`}></div>
+                <span className="text-gray-400 text-sm font-mono">Seats:</span>
+              </div>
+              <span className={`font-bold text-lg font-mono ${
+                regStatus.isFull ? 'text-red-500' :
+                regStatus.remainingSeats <= 10 ? 'text-yellow-500' :
+                'text-code-green'
+              }`}>
+                {regStatus.remainingSeats} / {regStatus.maxParticipants}
+              </span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* CTA Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -128,25 +173,38 @@ export default function Hero({ openModal, config }) {
         >
           <motion.button
             onClick={openModal}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="group relative px-12 py-5 bg-gradient-to-r from-code-green to-emerald-500 text-black font-bold text-xl rounded-lg overflow-hidden shadow-2xl"
+            disabled={regStatus && (!regStatus.registrationOpen || regStatus.isFull)}
+            whileHover={{ scale: regStatus?.registrationOpen && !regStatus?.isFull ? 1.05 : 1 }}
+            whileTap={{ scale: regStatus?.registrationOpen && !regStatus?.isFull ? 0.95 : 1 }}
+            className={`group relative px-12 py-5 font-bold text-xl rounded-lg overflow-hidden shadow-2xl transition-all ${
+              regStatus && (!regStatus.registrationOpen || regStatus.isFull)
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-60'
+                : 'bg-gradient-to-r from-code-green to-emerald-500 text-black'
+            }`}
           >
             <span className="relative z-10 flex items-center gap-3">
-              <span>{'> Register_Now()'}</span>
-              <motion.span
-                animate={{ x: [0, 5, 0] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                →
-              </motion.span>
+              <span>
+                {regStatus && !regStatus.registrationOpen ? '> Registration_Closed()' :
+                 regStatus && regStatus.isFull ? '> Registration_Full()' :
+                 '> Register_Now()'}
+              </span>
+              {regStatus?.registrationOpen && !regStatus?.isFull && (
+                <motion.span
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  →
+                </motion.span>
+              )}
             </span>
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-code-green"
-              initial={{ x: '-100%' }}
-              whileHover={{ x: 0 }}
-              transition={{ duration: 0.3 }}
-            />
+            {regStatus?.registrationOpen && !regStatus?.isFull && (
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-code-green"
+                initial={{ x: '-100%' }}
+                whileHover={{ x: 0 }}
+                transition={{ duration: 0.3 }}
+              />
+            )}
           </motion.button>
 
           <motion.a
